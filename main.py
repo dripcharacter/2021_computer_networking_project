@@ -41,6 +41,17 @@ for edgeNum in edgeNumList:
     edgeWeight = math.sqrt(math.pow((xPosEdgeA-xPosEdgeB), 2) + math.pow((yPosEdgeA-yPosEdgeB), 2))
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
 
+
+async def updateCache(dst, realdst, payload, cachelist):
+        global CONST_FACTOR
+        linkWeight = G.edges[dst, realdst]['weight']
+        sleepTime = linkWeight*CONST_FACTOR
+        await asyncio.sleep(sleepTime)
+        await asyncio.sleep(sleepTime)
+        del cachelist[dst-1][0]
+        cachelist[dst-1].append(payload)
+
+
 async def packet(G, src, dst, realdst, payload, cachelist):
     global endedPacketSeries
     global CONST_PACKETSERIES_LIMIT
