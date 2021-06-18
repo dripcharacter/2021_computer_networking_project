@@ -22,6 +22,7 @@ edgeNumList = edgeNum.values.tolist()
 
 endedPacketSeries=0
 CONST_PACKETSERIES_LIMIT=100
+CONST_FACTOR=10
 
 G = nx.Graph()
 G.add_nodes_from(nodeList)
@@ -43,10 +44,11 @@ for edgeNum in edgeNumList:
 async def packet(G, src, dst, realdst, payload, cachelist):
     global endedPacketSeries
     global CONST_PACKETSERIES_LIMIT
+    global CONST_FACTOR
     endedPacketSeries += 1
 
     linkWeight = G.edges[src, dst]['weight']
-    CONST_FACTOR=10
+
     sleepTime=linkWeight*CONST_FACTOR
     await asyncio.sleep(sleepTime)
 
