@@ -18,7 +18,7 @@ edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
 
-G=nx.Graph()
+G = nx.Graph()
 G.add_nodes_from(nodeList)
 
 for node in nodeList:
@@ -32,7 +32,7 @@ for edgeNum in edgeNumList:
     yPosEdgeA = nodeA['yPos']
     xPosEdgeB = nodeB['xPos']
     yPosEdgeB = nodeB['yPos']
-    edgeWeight=math.sqrt(math.pow((xPosEdgeA-xPosEdgeB), 2)+math.pow((yPosEdgeA-yPosEdgeB), 2))
+    edgeWeight = math.sqrt(math.pow((xPosEdgeA-xPosEdgeB), 2) + math.pow((yPosEdgeA-yPosEdgeB), 2))
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
 
 pos = nx.spring_layout(G)
