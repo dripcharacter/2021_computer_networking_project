@@ -4,6 +4,7 @@ import pandas as pd
 import math
 import time
 import asyncio
+from random import randint
 
 nodeData = pd.read_csv('topology_node.csv')
 edgeData = pd.read_csv('topology_edge.csv')
@@ -52,7 +53,7 @@ async def updateCache(G, dst, realdst, payload, cachelist):
         cachelist[dst-1].append(payload)
 
 
-async def packet(G, src, dst, realdst, payload, cachelist):
+async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     global endedPacketSeries
     global CONST_PACKETSERIES_LIMIT
     global CONST_FACTOR
@@ -61,6 +62,7 @@ async def packet(G, src, dst, realdst, payload, cachelist):
     linkWeight = G.edges[src, dst]['weight']
 
     sleepTime=linkWeight*CONST_FACTOR
+    start = time.time()
     await asyncio.sleep(sleepTime)
 
     dataexistencebool=False
@@ -82,8 +84,13 @@ async def packet(G, src, dst, realdst, payload, cachelist):
     await asyncio.sleep(sleepTime)
     await asyncio.sleep(sleepTime)
 
+    end = time.time()
+    rttList.append(end - start)
+
+    newPayload = randint(1, 100)
+
     if endedPacketSeries<CONST_PACKETSERIES_LIMIT:
-        asyncio.run(packet(G, src, dst, realdst, payload, cachelist)) # 새로운 request니까 payload 바꿔서 보내야됨
+        asyncio.run(packet(G, src, dst, realdst, newPayload, cachelist, rttList)) # 새로운 request니까 payload 바꿔서 보내야됨
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
