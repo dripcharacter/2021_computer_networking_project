@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import time
 import asyncio
 
 nodeData = pd.read_csv('topology_node.csv')
@@ -19,6 +20,9 @@ edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
 
+endedPacketSeries=0
+CONST_PACKETSERIES_LIMIT=100
+
 G = nx.Graph()
 G.add_nodes_from(nodeList)
 
@@ -35,6 +39,38 @@ for edgeNum in edgeNumList:
     yPosEdgeB = nodeB['yPos']
     edgeWeight = math.sqrt(math.pow((xPosEdgeA-xPosEdgeB), 2) + math.pow((yPosEdgeA-yPosEdgeB), 2))
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
+
+async def packet(G, src, dst, realdst, payload, cachelist):
+    global endedPacketSeries
+    global CONST_PACKETSERIES_LIMIT
+    endedPacketSeries += 1
+
+    linkWeight = G.edges[src, dst]['weight']
+    CONST_FACTOR=10
+    sleepTime=linkWeight*CONST_FACTOR
+    await asyncio.sleep(sleepTime)
+
+    dataexistencebool=False
+    if payload in cachelist[dst-1]:
+        dataexistencebool=True
+    else:
+        dataexistencebool=False
+
+    await asyncio.sleep(sleepTime)
+
+    linkWeight = G.edges[src, realdst]['weight']
+    sleepTime=linkWeight*CONST_FACTOR
+
+    if dataexistencebool:
+        sleepTime=0
+    else:# cacheupdate해야함
+        True
+
+    await asyncio.sleep(sleepTime)
+    await asyncio.sleep(sleepTime)
+
+    if endedPacketSeries<CONST_PACKETSERIES_LIMIT:
+        asyncio.run(packet(G, src, dst, realdst, payload, cachelist)) # 새로운 request니까 payload 바꿔서 보내야됨
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
