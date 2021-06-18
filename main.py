@@ -42,7 +42,7 @@ for edgeNum in edgeNumList:
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
 
 
-async def updateCache(dst, realdst, payload, cachelist):
+async def updateCache(G, dst, realdst, payload, cachelist):
         global CONST_FACTOR
         linkWeight = G.edges[dst, realdst]['weight']
         sleepTime = linkWeight*CONST_FACTOR
@@ -76,8 +76,8 @@ async def packet(G, src, dst, realdst, payload, cachelist):
 
     if dataexistencebool:
         sleepTime=0
-    else:# cacheupdate해야함
-        True
+    else:
+        asyncio.run(updateCache(G, dst, realdst, payload, cachelist))
 
     await asyncio.sleep(sleepTime)
     await asyncio.sleep(sleepTime)
