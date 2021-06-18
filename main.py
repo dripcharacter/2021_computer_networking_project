@@ -2,6 +2,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+import asyncio
 
 nodeData = pd.read_csv('topology_node.csv')
 edgeData = pd.read_csv('topology_edge.csv')
@@ -17,6 +18,8 @@ edgeNum = edgeData['edgeNum']
 edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
+
+endedPacketSeries=0
 
 G=nx.Graph()
 G.add_nodes_from(nodeList)
