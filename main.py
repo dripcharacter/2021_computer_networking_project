@@ -64,11 +64,14 @@ for i in nodeList:
         clientList.append(i)
 
 varianceList=[]
+trialNumList=[]
 for node in nodeList:
     if node not in clientList:
         varianceList.append(-1)
+        trialNumList.append(1)
     else:
         varianceList.append(0)
+        trialNumList.append(0)
 
 for edgeNum in edgeNumList:
     nodeA = G.nodes[edgeAList[edgeNum]]
@@ -96,6 +99,8 @@ async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     global CONST_PACKETSERIES_LIMIT
     global CONST_FACTOR
     endedPacketSeries += 1
+    if src in clientList:
+        trialNumList[src-1]+=1
     print(endedPacketSeries)
 
     linkWeight = G.edges[src, dst]['weight']
@@ -156,9 +161,19 @@ for nodeRttList in rttList:
     else:
         rttMeanList.append(-1)
 
+for node in varianceList:
+    if node in clientList:
+        if trialNumList[node-1]!=0:
+            varianceList[node-1]=varianceList[node-1]/trialNumList[node-1]
+        else:
+            varianceList[node - 1] = varianceList[node - 1] / 1
+
 print(cacheList)
 print(rttMeanList)
 print(varianceList)
+
+rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
+rttMeanDataFrame.to_csv('./output/rttMean_output.csv', index=False, header=False)
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
