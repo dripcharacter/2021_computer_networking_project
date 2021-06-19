@@ -14,12 +14,16 @@ yPos = nodeData['yPos']
 nodeType=nodeData['nodeType']
 relatedCache=nodeData['relatedCache']
 relatedServer=nodeData['relatedServer']
+groupProperty=nodeData['groupProperty']
+groupProb=nodeData['groupProb']
 nodeList = node.values.tolist()
 xPosList = xPos.values.tolist()
 yPosList = yPos.values.tolist()
 nodeTypeList=nodeType.values.tolist()
 relatedCacheList=relatedCache.values.tolist()
 relatedServerList=relatedServer.values.tolist()
+groupPropertyList=groupProperty.values.tolist()
+groupProbList=groupProb.values.tolist()
 edgeA = edgeData['nodeA']
 edgeB = edgeData['nodeB']
 edgeNum = edgeData['edgeNum']
@@ -29,7 +33,7 @@ edgeNumList = edgeNum.values.tolist()
 
 endedPacketSeries=0
 CONST_PACKETSERIES_LIMIT=100
-CONST_FACTOR=0.1
+CONST_FACTOR=0.01
 CONST_CACHE_SIZE=10
 
 G = nx.Graph()
@@ -40,10 +44,10 @@ for node in nodeList:
     G.nodes[node]['yPos'] = yPosList[nodeList.index(node)]
 
 cacheList=[]
-for i in nodeList:
+for node in nodeList:
     eachCache=[]
-    for i in range(0, len(nodeList)):
-        if nodeTypeList[i-1]!=0:
+    for i in range(0, CONST_CACHE_SIZE):
+        if nodeTypeList[node-1]!=0:
             eachCache.append(randint(1, 100))
         else:
             eachCache.append(0)
@@ -58,6 +62,13 @@ clientList=[]
 for i in nodeList:
     if nodeTypeList[i-1]==0:
         clientList.append(i)
+
+varianceList=[]
+for node in nodeList:
+    if node not in clientList:
+        varianceList.append(-1)
+    else:
+        varianceList.append(0)
 
 for edgeNum in edgeNumList:
     nodeA = G.nodes[edgeAList[edgeNum]]
@@ -117,12 +128,15 @@ async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     await asyncio.sleep(sleepTime)
 
     end = time.time()
-    rttList.append(end - start - (updateEnd-updateStart))
+    rttList[src-1].append(end - start - (updateEnd-updateStart))
 
 async def main():
     randIntList=[]
     for node in nodeList:
         payload=randint(1, 100)
+        if payload<=groupProbList[node-1]:
+            payload=groupPropertyList[node-1]
+            varianceList[node-1]+=1
         randIntList.append(payload)
     futures=[asyncio.ensure_future(packet(G, node, relatedCacheList[node-1], relatedServerList[node-1], randIntList[node-1], cacheList, rttList)) for node in clientList]
 
@@ -133,6 +147,7 @@ while endedPacketSeries<CONST_PACKETSERIES_LIMIT:
 
 print(cacheList)
 print(rttList)
+print(varianceList)
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
