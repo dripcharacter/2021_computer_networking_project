@@ -161,7 +161,7 @@ for nodeRttList in rttList:
     else:
         rttMeanList.append(-1)
 
-for node in varianceList:
+for node in nodeList:
     if node in clientList:
         if trialNumList[node-1]!=0:
             varianceList[node-1]=varianceList[node-1]/trialNumList[node-1]
