@@ -6,56 +6,57 @@ import time
 import asyncio
 from random import randint
 import sys
+
 # node, edge 정보를 담은 csv 파일과 네트워크 performance를 평가하는 정보를 담을 final csv파일
 topology = sys.argv[1]
 edge = sys.argv[2]
-final=sys.argv[3]
+final = sys.argv[3]
 
 fileNum = topology[12:13]
 # 이후에 있을 시뮬레이션에 필요한 정보들을 추출
-nodeData = pd.read_csv(topology)# node 관련 데이터 추출
-edgeData = pd.read_csv(edge)# edge 관련 데이터 추출
-finalData=pd.read_csv(final)# 이번 시뮬레이션의 결과를 저장하기 위한 추출
+nodeData = pd.read_csv(topology)  # node 관련 데이터 추출
+edgeData = pd.read_csv(edge)  # edge 관련 데이터 추출
+finalData = pd.read_csv(final)  # 이번 시뮬레이션의 결과를 저장하기 위한 추출
 node = nodeData['node']
 xPos = nodeData['xPos']
 yPos = nodeData['yPos']
-nodeType=nodeData['nodeType']
-relatedCache=nodeData['relatedCache']
-relatedServer=nodeData['relatedServer']
-groupProperty=nodeData['groupProperty']
-groupProb=nodeData['groupProb']
+nodeType = nodeData['nodeType']
+relatedCache = nodeData['relatedCache']
+relatedServer = nodeData['relatedServer']
+groupProperty = nodeData['groupProperty']
+groupProb = nodeData['groupProb']
 nodeList = node.values.tolist()
 xPosList = xPos.values.tolist()
 yPosList = yPos.values.tolist()
-nodeTypeList=nodeType.values.tolist()
-relatedCacheList=relatedCache.values.tolist()
-relatedServerList=relatedServer.values.tolist()
-groupPropertyList=groupProperty.values.tolist()
-groupProbList=groupProb.values.tolist()
+nodeTypeList = nodeType.values.tolist()
+relatedCacheList = relatedCache.values.tolist()
+relatedServerList = relatedServer.values.tolist()
+groupPropertyList = groupProperty.values.tolist()
+groupProbList = groupProb.values.tolist()
 edgeA = edgeData['nodeA']
 edgeB = edgeData['nodeB']
 edgeNum = edgeData['edgeNum']
 edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
-x=finalData['xPos']
-y=finalData['yPos']
-finalRttData=finalData['finalRttData']
+x = finalData['xPos']
+y = finalData['yPos']
+finalRttData = finalData['finalRttData']
 xList = x.values.tolist()
 yList = y.values.tolist()
 finalRttDataList = finalRttData.values.tolist()
 # cacheServer의 위치를 랜덤으로 배정하는 부분(위치의 x, y position의 범위는 네트워크 토폴로지의 베이스가 된 사진의 크기와 관련있다.)
-cacheServerNodeNum=0
+cacheServerNodeNum = 0
 for node in nodeList:
-    if nodeTypeList[node-1]==1:
-        xPosList[node-1]=randint(0, 520)
+    if nodeTypeList[node - 1] == 1:
+        xPosList[node - 1] = randint(0, 520)
         yPosList[node - 1] = randint(0, 600)
-        cacheServerNodeNum=node
+        cacheServerNodeNum = node
 # 네트워크 시뮬레이션과 관련된 하이퍼 파라메터(총 시행할 통신의 횟수, 링크의 weight와 관련된 factor, caching server의 size)
-endedPacketSeries=0
-CONST_PACKETSERIES_LIMIT=400
-CONST_FACTOR=0.0001
-CONST_CACHE_SIZE=10
+endedPacketSeries = 0
+CONST_PACKETSERIES_LIMIT = 400
+CONST_FACTOR = 0.0001
+CONST_CACHE_SIZE = 10
 # 그래프를 만들고 node 관련 csv 파일에서 가져온 node 정보로 node 추가
 G = nx.Graph()
 G.add_nodes_from(nodeList)
@@ -64,28 +65,28 @@ for node in nodeList:
     G.nodes[node]['xPos'] = xPosList[nodeList.index(node)]
     G.nodes[node]['yPos'] = yPosList[nodeList.index(node)]
 # 캐싱 서버의 역할을 할 리스트들의 초기화
-cacheList=[]
+cacheList = []
 for node in nodeList:
-    eachCache=[]
+    eachCache = []
     for i in range(0, CONST_CACHE_SIZE):
-        if nodeTypeList[node-1]!=0:
+        if nodeTypeList[node - 1] != 0:
             eachCache.append(randint(1, 100))
         else:
             eachCache.append(0)
     cacheList.append(eachCache)
 # 각 노드들의 매 통신마다의 rtt를 기록할 리스트 초기화
-rttList=[]
+rttList = []
 for i in nodeList:
-    eachRtt=[]
+    eachRtt = []
     rttList.append(eachRtt)
 # client node(server node, cache server node를 제외한 노드)를 담아놓는 리스트
-clientList=[]
+clientList = []
 for i in nodeList:
-    if nodeTypeList[i-1]==0:
+    if nodeTypeList[i - 1] == 0:
         clientList.append(i)
 # 각 node들의 variety(같은 것을 request하는 request가 몇번인지), 총 통신 횟수가 몇번인지 저장하는 리스트들 초기화
-varietyList=[]
-trialNumList=[]
+varietyList = []
+trialNumList = []
 for node in nodeList:
     if node not in clientList:
         varietyList.append(-1)
@@ -101,92 +102,99 @@ for edgeNum in edgeNumList:
     yPosEdgeA = nodeA['yPos']
     xPosEdgeB = nodeB['xPos']
     yPosEdgeB = nodeB['yPos']
-    edgeWeight = math.sqrt(math.pow((xPosEdgeA-xPosEdgeB), 2) + math.pow((yPosEdgeA-yPosEdgeB), 2))
+    edgeWeight = math.sqrt(math.pow((xPosEdgeA - xPosEdgeB), 2) + math.pow((yPosEdgeA - yPosEdgeB), 2))
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
+
 
 # cache server의 값을 update할 필요가 있을 경우 실행하는 함수
 def updateCache(G, dst, realdst, payload, cachelist):
-        global CONST_FACTOR
-        linkWeight = G.edges[dst, realdst]['weight']
-        sleepTime = linkWeight*CONST_FACTOR
-        time.sleep(sleepTime)
-        time.sleep(sleepTime)
-        del cachelist[dst-1][0]
-        cachelist[dst-1].append(payload)
+    global CONST_FACTOR
+    linkWeight = G.edges[dst, realdst]['weight']
+    sleepTime = linkWeight * CONST_FACTOR
+    time.sleep(sleepTime)
+    time.sleep(sleepTime)
+    del cachelist[dst - 1][0]
+    cachelist[dst - 1].append(payload)
+
 
 # 특정 통신의 절차를 진행하는 함수
 async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     global endedPacketSeries
     global CONST_PACKETSERIES_LIMIT
     global CONST_FACTOR
-    endedPacketSeries += 1# 현재까지 진행한 통신 횟수 기록
+    endedPacketSeries += 1  # 현재까지 진행한 통신 횟수 기록
     if src in clientList:
-        trialNumList[src-1]+=1
+        trialNumList[src - 1] += 1
     print(endedPacketSeries)
 
     linkWeight = G.edges[src, dst]['weight']
-# sleepTime을 node간 거리*factor로 하여 node들 간의 거리가 너무 멀거나 짧거나 길 경우 시뮬레이션 시간을 줄이거나 늘려준다
-    sleepTime=linkWeight*CONST_FACTOR
+    # sleepTime을 node간 거리*factor로 하여 node들 간의 거리가 너무 멀거나 짧거나 길 경우 시뮬레이션 시간을 줄이거나 늘려준다
+    sleepTime = linkWeight * CONST_FACTOR
     start = time.time()
-    await asyncio.sleep(sleepTime)#src에서 dst까지 packet 이동
-#dst node(cache server)에 찾는 데이터가 있는지 확인한다
-    dataexistencebool=False
-    if payload in cachelist[dst-1]:
-        dataexistencebool=True
+    await asyncio.sleep(sleepTime)  # src에서 dst까지 packet 이동
+    # dst node(cache server)에 찾는 데이터가 있는지 확인한다
+    dataexistencebool = False
+    if payload in cachelist[dst - 1]:
+        dataexistencebool = True
     else:
-        dataexistencebool=False
+        dataexistencebool = False
 
-    await asyncio.sleep(sleepTime)# dst에서 src까지 packet 이동
+    await asyncio.sleep(sleepTime)  # dst에서 src까지 packet 이동
 
     linkWeight = G.edges[src, realdst]['weight']
-    sleepTime=linkWeight*CONST_FACTOR
+    sleepTime = linkWeight * CONST_FACTOR
     # update cache를 비동기로 돌리기 힘들어서 그 시간동안 wait하되, node의 통신 시간에는 영향을 미치지 않게 하기 위한 측정
-    updateStart=0
-    updateEnd=0
-    #data가 있으면 sleepTime을 0으로 하여 client에서 본 서버까지 데이터 요청하는 시간을 없앤다
+    updateStart = 0
+    updateEnd = 0
+    # data가 있으면 sleepTime을 0으로 하여 client에서 본 서버까지 데이터 요청하는 시간을 없앤다
     if dataexistencebool:
-        sleepTime=0
-    else:# updateStart와 updateEnd를 측정하여 updateCache하는동안의 시간을 측정한다
-        updateStart=time.time()
+        sleepTime = 0
+    else:  # updateStart와 updateEnd를 측정하여 updateCache하는동안의 시간을 측정한다
+        updateStart = time.time()
         updateCache(G, dst, realdst, payload, cachelist)
         updateEnd = time.time()
-    #src에서 본 서버에 데이터를 요청하는 시간 지연이지만 cache server에 데이터가 있다면 sleepTime이 0이기 때문에 없는 것과 같다
+    # src에서 본 서버에 데이터를 요청하는 시간 지연이지만 cache server에 데이터가 있다면 sleepTime이 0이기 때문에 없는 것과 같다
     await asyncio.sleep(sleepTime)
     await asyncio.sleep(sleepTime)
 
     end = time.time()
-    rttList[src-1].append(end - start - (updateEnd-updateStart))#측정한 통신의 rtt를 기록
+    rttList[src - 1].append(end - start - (updateEnd - updateStart))  # 측정한 통신의 rtt를 기록
 
-async def main():# asyncio는 한번에 하나의 run만 할 수 있기에 한번에 asyncio 리스트 객체에서 run을 시킨다
-    randIntList=[]
+
+async def main():  # asyncio는 한번에 하나의 run만 할 수 있기에 한번에 asyncio 리스트 객체에서 run을 시킨다
+    randIntList = []
     for node in nodeList:
-        payload=randint(1, 100)
-        if payload<=groupProbList[node-1]:
-            payload=groupPropertyList[node-1]
-            varietyList[node-1]+=1
+        payload = randint(1, 100)
+        if payload <= groupProbList[node - 1]:
+            payload = groupPropertyList[node - 1]
+            varietyList[node - 1] += 1
         randIntList.append(payload)
-    futures=[asyncio.ensure_future(packet(G, node, relatedCacheList[node-1], relatedServerList[node-1], randIntList[node-1], cacheList, rttList)) for node in clientList]
+    futures = [asyncio.ensure_future(
+        packet(G, node, relatedCacheList[node - 1], relatedServerList[node - 1], randIntList[node - 1], cacheList,
+               rttList)) for node in clientList]
 
-    result=await asyncio.gather(*futures)
-#비동기 통신을 하는 main함수를 미리 정한 통신 횟수가 넘을때까지 실행한다
-while endedPacketSeries<CONST_PACKETSERIES_LIMIT:
+    result = await asyncio.gather(*futures)
+
+
+# 비동기 통신을 하는 main함수를 미리 정한 통신 횟수가 넘을때까지 실행한다
+while endedPacketSeries < CONST_PACKETSERIES_LIMIT:
     asyncio.run(main())
-#기록했던 rtt를 바탕으로 각 node의 rtt의 평균을 구한다
-rttMeanList=[]
+# 기록했던 rtt를 바탕으로 각 node의 rtt의 평균을 구한다
+rttMeanList = []
 for nodeRttList in rttList:
-    if len(nodeRttList)!=0:
-        rttSum=0
+    if len(nodeRttList) != 0:
+        rttSum = 0
         for rtt in nodeRttList:
-            rttSum=rttSum+rtt
-        rttSum=rttSum/len(nodeRttList)
+            rttSum = rttSum + rtt
+        rttSum = rttSum / len(nodeRttList)
         rttMeanList.append(rttSum)
     else:
         rttMeanList.append(-1)
-#각 노드의 variety를 구한다
+# 각 노드의 variety를 구한다
 for node in nodeList:
     if node in clientList:
-        if trialNumList[node-1]!=0:
-            varietyList[node-1]=varietyList[node-1]/trialNumList[node-1]
+        if trialNumList[node - 1] != 0:
+            varietyList[node - 1] = varietyList[node - 1] / trialNumList[node - 1]
         else:
             varietyList[node - 1] = varietyList[node - 1] / 1
 
@@ -194,14 +202,15 @@ print(cacheList)
 print(rttMeanList)
 print(varietyList)
 # 네트워크의 best performance를 가질 것이라 예상되는 지점을 구하는 식의 계수를 구하는 과정
-constantTerm=0
+constantTerm = 0
 firstXTerm = 0
-firstYTerm=0
-secondXTerm=0
-secondYTerm=0
+firstYTerm = 0
+secondXTerm = 0
+secondYTerm = 0
 for node in nodeList:
     if node in clientList:
-        constantTerm = constantTerm + groupProbList[node - 1] / 100 * (xPosList[node - 1] ** 2) + groupProbList[node - 1] / 100 * (yPosList[node - 1] ** 2)
+        constantTerm = constantTerm + groupProbList[node - 1] / 100 * (xPosList[node - 1] ** 2) + groupProbList[
+            node - 1] / 100 * (yPosList[node - 1] ** 2)
         firstXTerm = firstXTerm + ((-2) * (groupProbList[node - 1] / 100) * xPosList[node - 1])
         firstYTerm = firstYTerm + ((-2) * (groupProbList[node - 1] / 100) * yPosList[node - 1])
         secondXTerm = secondXTerm + (groupProbList[node - 1] / 100)
@@ -218,30 +227,30 @@ print("secondYTerm------------------")
 print(secondYTerm)
 print("-----------------------------")
 # 네트워크의 performance인 각 노드들의 평균 rtt들의 평균을 구하여 cache server 위치와 함께 미리 만든 리스트에 넣는다
-meanOfRttMean=0
+meanOfRttMean = 0
 for node in nodeList:
     if node in clientList:
-        meanOfRttMean=meanOfRttMean+rttMeanList[node-1]
-meanOfRttMean=meanOfRttMean/(len(rttMeanList)-2)
+        meanOfRttMean = meanOfRttMean + rttMeanList[node - 1]
+meanOfRttMean = meanOfRttMean / (len(rttMeanList) - 2)
 print("cacheServerXPos--------------")
-print(xPosList[cacheServerNodeNum-1])
+print(xPosList[cacheServerNodeNum - 1])
 print("cacheServerYPos--------------")
-print(yPosList[cacheServerNodeNum-1])
+print(yPosList[cacheServerNodeNum - 1])
 print("meanOfRttMean----------------")
 print(meanOfRttMean)
 print("-----------------------------")
 
-xList.append(xPosList[cacheServerNodeNum-1])
-yList.append(yPosList[cacheServerNodeNum-1])
+xList.append(xPosList[cacheServerNodeNum - 1])
+yList.append(yPosList[cacheServerNodeNum - 1])
 finalRttDataList.append(meanOfRttMean)
-#필요한 데이터들을 csv파일로 만들어 준다
+# 필요한 데이터들을 csv파일로 만들어 준다
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
 
 varianceDataFrame = pd.DataFrame({'variety': varietyList})
 varianceDataFrame.to_csv(f'./output/variance{fileNum}.csv', index=False, header=False)
 
-finalDataFrame=pd.DataFrame({'xPos': xList, 'yPos': yList, 'finalRttData': finalRttDataList})
+finalDataFrame = pd.DataFrame({'xPos': xList, 'yPos': yList, 'finalRttData': finalRttDataList})
 finalDataFrame.to_csv(f'./output/final{fileNum}.csv', index=False, header=True)
 
 pos = nx.spring_layout(G)
