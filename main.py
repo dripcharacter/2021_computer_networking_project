@@ -145,8 +145,19 @@ async def main():
 while endedPacketSeries<CONST_PACKETSERIES_LIMIT:
     asyncio.run(main())
 
+rttMeanList=[]
+for nodeRttList in rttList:
+    if len(nodeRttList)!=0:
+        rttSum=0
+        for rtt in nodeRttList:
+            rttSum=rttSum+rtt
+        rttSum=rttSum/len(nodeRttList)
+        rttMeanList.append(rttSum)
+    else:
+        rttMeanList.append(-1)
+
 print(cacheList)
-print(rttList)
+print(rttMeanList)
 print(varianceList)
 
 pos = nx.spring_layout(G)
