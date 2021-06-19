@@ -9,6 +9,7 @@ import sys
 
 topology = sys.argv[1]
 edge = sys.argv[2]
+final=sys.argv[3]
 
 fileNum = topology[12:13]
 
@@ -16,6 +17,7 @@ print(topology, edge)
 
 nodeData = pd.read_csv(topology)
 edgeData = pd.read_csv(edge)
+finalData=pd.read_csv(final)
 node = nodeData['node']
 xPos = nodeData['xPos']
 yPos = nodeData['yPos']
@@ -38,6 +40,12 @@ edgeNum = edgeData['edgeNum']
 edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
+x=finalData['xPos']
+y=finalData['yPos']
+finalRttData=finalData['finalRttData']
+xList = x.values.tolist()
+yList = y.values.tolist()
+finalRttDataList = finalRttData.values.tolist()
 
 cacheServerNodeNum=0
 for node in nodeList:
@@ -224,11 +232,18 @@ print("meanOfRttMean----------------")
 print(meanOfRttMean)
 print("-----------------------------")
 
+xList.append(xPosList[cacheServerNodeNum-1])
+yList.append(yPosList[cacheServerNodeNum-1])
+finalRttDataList.append(meanOfRttMean)
+
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
 
 varianceDataFrame = pd.DataFrame({'variance': varianceList})
 varianceDataFrame.to_csv(f'./output/variance{fileNum}.csv', index=False, header=False)
+
+finalDataFrame=pd.DataFrame({'xPos': xList, 'yPos': yList, 'finalRttData': finalRttDataList})
+finalDataFrame.to_csv(f'./output/final{fileNum}.csv', index=False, header=False)
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
