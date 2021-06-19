@@ -40,8 +40,8 @@ edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
 
 endedPacketSeries=0
-CONST_PACKETSERIES_LIMIT=100
-CONST_FACTOR=0.01
+CONST_PACKETSERIES_LIMIT=1000
+CONST_FACTOR=0.000001
 CONST_CACHE_SIZE=10
 
 G = nx.Graph()
@@ -179,6 +179,31 @@ for node in nodeList:
 print(cacheList)
 print(rttMeanList)
 print(varianceList)
+
+constantTerm=0
+firstXTerm = 0
+firstYTerm=0
+secondXTerm=0
+secondYTerm=0
+for node in nodeList:
+    if node in clientList:
+        constantTerm = constantTerm + groupProbList[node - 1] / 100 * (xPosList[node - 1] ** 2) + groupProbList[node - 1] / 100 * (yPosList[node - 1] ** 2)
+        firstXTerm = firstXTerm + ((-2) * (groupProbList[node - 1] / 100) * xPosList[node - 1])
+        firstYTerm = firstYTerm + ((-2) * (groupProbList[node - 1] / 100) * yPosList[node - 1])
+        secondXTerm = secondXTerm + (groupProbList[node - 1] / 100)
+        secondYTerm = secondYTerm + (groupProbList[node - 1] / 100)
+print("constantTerm---------------- ")
+print(constantTerm)
+print("firstXTerm-------------------")
+print(firstXTerm)
+print("firstYTerm-------------------")
+print(firstYTerm)
+print("secondXTerm------------------")
+print(secondXTerm)
+print("secondYTerm------------------")
+print(secondYTerm)
+print("-----------------------------")
+
 
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
