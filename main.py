@@ -175,6 +175,9 @@ print(varianceList)
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv('./output/rttMean_output.csv', index=False, header=False)
 
+varianceDataFrame = pd.DataFrame({'variance': varianceList})
+varianceDataFrame.to_csv('./output/variance_output.csv', index=False, header=False)
+
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
 
