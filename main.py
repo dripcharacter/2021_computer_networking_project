@@ -39,6 +39,13 @@ edgeAList = edgeA.values.tolist()
 edgeBList = edgeB.values.tolist()
 edgeNumList = edgeNum.values.tolist()
 
+cacheServerNodeNum=0
+for node in nodeList:
+    if nodeTypeList[node-1]==1:
+        xPosList[node-1]=randint(0, 700)
+        yPosList[node - 1] = randint(0, 700)
+        cacheServerNodeNum=node
+
 endedPacketSeries=0
 CONST_PACKETSERIES_LIMIT=1000
 CONST_FACTOR=0.000001
@@ -204,6 +211,18 @@ print("secondYTerm------------------")
 print(secondYTerm)
 print("-----------------------------")
 
+meanOfRttMean=0
+for node in nodeList:
+    if node in clientList:
+        meanOfRttMean=meanOfRttMean+rttMeanList[node-1]
+meanOfRttMean=meanOfRttMean/(len(rttMeanList)-2)
+print("cacheServerXPos--------------")
+print(xPosList[cacheServerNodeNum-1])
+print("cacheServerYPos--------------")
+print(yPosList[cacheServerNodeNum-1])
+print("meanOfRttMean----------------")
+print(meanOfRttMean)
+print("-----------------------------")
 
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
