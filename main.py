@@ -5,9 +5,17 @@ import math
 import time
 import asyncio
 from random import randint
+import sys
 
-nodeData = pd.read_csv('topology_node.csv')
-edgeData = pd.read_csv('topology_edge.csv')
+topology = sys.argv[1]
+edge = sys.argv[2]
+
+fileNum = topology[12:13]
+
+print(topology, edge)
+
+nodeData = pd.read_csv(topology)
+edgeData = pd.read_csv(edge)
 node = nodeData['node']
 xPos = nodeData['xPos']
 yPos = nodeData['yPos']
@@ -173,10 +181,10 @@ print(rttMeanList)
 print(varianceList)
 
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
-rttMeanDataFrame.to_csv('./output/rttMean_output.csv', index=False, header=False)
+rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
 
 varianceDataFrame = pd.DataFrame({'variance': varianceList})
-varianceDataFrame.to_csv('./output/variance_output.csv', index=False, header=False)
+varianceDataFrame.to_csv(f'./output/variance{fileNum}.csv', index=False, header=False)
 
 pos = nx.spring_layout(G)
 nx.draw(G, pos=pos, with_labels=True)
