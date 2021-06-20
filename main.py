@@ -6,6 +6,7 @@ import time
 import asyncio
 from random import randint
 import sys
+import numpy as np
 
 # node, edge 정보를 담은 csv 파일과 네트워크 performance를 평가하는 정보를 담을 final csv파일
 topology = sys.argv[1]
@@ -49,8 +50,8 @@ finalRttDataList = finalRttData.values.tolist()
 cacheServerNodeNum = 0
 for node in nodeList:
     if nodeTypeList[node - 1] == 1:
-        xPosList[node - 1] = randint(0, 520)
-        yPosList[node - 1] = randint(0, 600)
+        xPosList[node - 1] = randint(0, 500)
+        yPosList[node - 1] = randint(0, 400)
         cacheServerNodeNum = node
 # 네트워크 시뮬레이션과 관련된 하이퍼 파라메터(총 시행할 통신의 횟수, 링크의 weight와 관련된 factor, caching server의 size)
 endedPacketSeries = 0
@@ -243,6 +244,17 @@ print("-----------------------------")
 xList.append(xPosList[cacheServerNodeNum - 1])
 yList.append(yPosList[cacheServerNodeNum - 1])
 finalRttDataList.append(meanOfRttMean)
+
+fig=plt.figure()
+ax=fig.add_subplot(projection='3d')
+dx=30
+dy=30
+ax.set_xlabel('xPos')
+ax.set_ylabel('yPos')
+ax.set_zlabel('meanOfRttMeans')
+ax.bar3d(xList, yList, np.zeros_like(finalRttDataList), dx, dy, finalRttDataList, shade=True)
+plt.show()
+
 # 필요한 데이터들을 csv파일로 만들어 준다
 rttMeanDataFrame = pd.DataFrame({'rttMean': rttMeanList})
 rttMeanDataFrame.to_csv(f'./output/rttMean{fileNum}.csv', index=False, header=False)
