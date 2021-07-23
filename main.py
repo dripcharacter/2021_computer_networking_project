@@ -1,4 +1,5 @@
 import networkx as nx
+import threading
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
@@ -12,6 +13,8 @@ import numpy as np
 topology = sys.argv[1]
 edge = sys.argv[2]
 final = sys.argv[3]
+# 네트워크 시뮬레이션을 몇 번할지
+simulNum=sys.argv[4]
 
 fileNum = topology[12:13]
 # 이후에 있을 시뮬레이션에 필요한 정보들을 추출
@@ -46,17 +49,19 @@ finalRttData = finalData['finalRttData']
 xList = x.values.tolist()
 yList = y.values.tolist()
 finalRttDataList = finalRttData.values.tolist()
+
+# TODO 여기서부터는 시뮬레이션 1번에 대한 것
 # cacheServer의 위치를 랜덤으로 배정하는 부분(위치의 x, y position의 범위는 네트워크 토폴로지의 베이스가 된 사진의 크기와 관련있다.)
 cacheServerNodeNum = 0
 for node in nodeList:
-    if nodeTypeList[node - 1] == 1:
-        xPosList[node - 1] = randint(0, 500)
-        yPosList[node - 1] = randint(0, 400)
+    if nodeTypeList[node] == 1:
+        xPosList[node] = randint(0, 500)
+        yPosList[node] = randint(0, 400)
         cacheServerNodeNum = node
 # 네트워크 시뮬레이션과 관련된 하이퍼 파라메터(총 시행할 통신의 횟수, 링크의 weight와 관련된 factor, caching server의 size)
 endedPacketSeries = 0
-CONST_PACKETSERIES_LIMIT = 400
-CONST_FACTOR = 0.0001
+CONST_PACKETSERIES_LIMIT = 1000
+CONST_FACTOR = 0.000001
 CONST_CACHE_SIZE = 10
 # 그래프를 만들고 node 관련 csv 파일에서 가져온 node 정보로 node 추가
 G = nx.Graph()
@@ -70,7 +75,7 @@ cacheList = []
 for node in nodeList:
     eachCache = []
     for i in range(0, CONST_CACHE_SIZE):
-        if nodeTypeList[node - 1] != 0:
+        if nodeTypeList[node] != 0:
             eachCache.append(randint(1, 100))
         else:
             eachCache.append(0)
@@ -114,8 +119,8 @@ def updateCache(G, dst, realdst, payload, cachelist):
     sleepTime = linkWeight * CONST_FACTOR
     time.sleep(sleepTime)
     time.sleep(sleepTime)
-    del cachelist[dst - 1][0]
-    cachelist[dst - 1].append(payload)
+    del cachelist[dst][0]
+    cachelist[dst].append(payload)
 
 
 # 특정 통신의 절차를 진행하는 함수
@@ -125,7 +130,7 @@ async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     global CONST_FACTOR
     endedPacketSeries += 1  # 현재까지 진행한 통신 횟수 기록
     if src in clientList:
-        trialNumList[src - 1] += 1
+        trialNumList[src] += 1
     print(endedPacketSeries)
 
     linkWeight = G.edges[src, dst]['weight']
@@ -135,7 +140,7 @@ async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     await asyncio.sleep(sleepTime)  # src에서 dst까지 packet 이동
     # dst node(cache server)에 찾는 데이터가 있는지 확인한다
     dataexistencebool = False
-    if payload in cachelist[dst - 1]:
+    if payload in cachelist[dst]:
         dataexistencebool = True
     else:
         dataexistencebool = False
@@ -159,19 +164,19 @@ async def packet(G, src, dst, realdst, payload, cachelist, rttList):
     await asyncio.sleep(sleepTime)
 
     end = time.time()
-    rttList[src - 1].append(end - start - (updateEnd - updateStart))  # 측정한 통신의 rtt를 기록
+    rttList[src].append(end - start - (updateEnd - updateStart))  # 측정한 통신의 rtt를 기록
 
 
 async def main():  # asyncio는 한번에 하나의 run만 할 수 있기에 한번에 asyncio 리스트 객체에서 run을 시킨다
     randIntList = []
     for node in nodeList:
         payload = randint(1, 100)
-        if payload <= groupProbList[node - 1]:
-            payload = groupPropertyList[node - 1]
-            varietyList[node - 1] += 1
+        if payload <= groupProbList[node]:
+            payload = groupPropertyList[node]
+            varietyList[node] += 1
         randIntList.append(payload)
     futures = [asyncio.ensure_future(
-        packet(G, node, relatedCacheList[node - 1], relatedServerList[node - 1], randIntList[node - 1], cacheList,
+        packet(G, node, relatedCacheList[node], relatedServerList[node], randIntList[node], cacheList,
                rttList)) for node in clientList]
 
     result = await asyncio.gather(*futures)
@@ -194,10 +199,10 @@ for nodeRttList in rttList:
 # 각 노드의 variety를 구한다
 for node in nodeList:
     if node in clientList:
-        if trialNumList[node - 1] != 0:
-            varietyList[node - 1] = varietyList[node - 1] / trialNumList[node - 1]
+        if trialNumList[node] != 0:
+            varietyList[node] = varietyList[node] / trialNumList[node]
         else:
-            varietyList[node - 1] = varietyList[node - 1] / 1
+            varietyList[node] = varietyList[node] / 1
 
 print(cacheList)
 print(rttMeanList)
@@ -210,12 +215,12 @@ secondXTerm = 0
 secondYTerm = 0
 for node in nodeList:
     if node in clientList:
-        constantTerm = constantTerm + groupProbList[node - 1] / 100 * (xPosList[node - 1] ** 2) + groupProbList[
-            node - 1] / 100 * (yPosList[node - 1] ** 2)
-        firstXTerm = firstXTerm + ((-2) * (groupProbList[node - 1] / 100) * xPosList[node - 1])
-        firstYTerm = firstYTerm + ((-2) * (groupProbList[node - 1] / 100) * yPosList[node - 1])
-        secondXTerm = secondXTerm + (groupProbList[node - 1] / 100)
-        secondYTerm = secondYTerm + (groupProbList[node - 1] / 100)
+        constantTerm = constantTerm + groupProbList[node] / 100 * (xPosList[node] ** 2) + groupProbList[
+            node] / 100 * (yPosList[node] ** 2)
+        firstXTerm = firstXTerm + ((-2) * (groupProbList[node] / 100) * xPosList[node])
+        firstYTerm = firstYTerm + ((-2) * (groupProbList[node] / 100) * yPosList[node])
+        secondXTerm = secondXTerm + (groupProbList[node] / 100)
+        secondYTerm = secondYTerm + (groupProbList[node] / 100)
 print("constantTerm---------------- ")
 print(constantTerm)
 print("firstXTerm-------------------")
@@ -231,18 +236,18 @@ print("-----------------------------")
 meanOfRttMean = 0
 for node in nodeList:
     if node in clientList:
-        meanOfRttMean = meanOfRttMean + rttMeanList[node - 1]
+        meanOfRttMean = meanOfRttMean + rttMeanList[node]
 meanOfRttMean = meanOfRttMean / (len(rttMeanList) - 2)
 print("cacheServerXPos--------------")
-print(xPosList[cacheServerNodeNum - 1])
+print(xPosList[cacheServerNodeNum])
 print("cacheServerYPos--------------")
-print(yPosList[cacheServerNodeNum - 1])
+print(yPosList[cacheServerNodeNum])
 print("meanOfRttMean----------------")
 print(meanOfRttMean)
 print("-----------------------------")
 
-xList.append(xPosList[cacheServerNodeNum - 1])
-yList.append(yPosList[cacheServerNodeNum - 1])
+xList.append(xPosList[cacheServerNodeNum])
+yList.append(yPosList[cacheServerNodeNum])
 finalRttDataList.append(meanOfRttMean)
 
 fig=plt.figure()
