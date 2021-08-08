@@ -2,7 +2,7 @@
 
 main.py 실행 command line: python main.py nodecsvfile edgecsvfile datacsvfile
 
-ex) python main.py ./input/node3.csv ./input/edge3.csv ./output/final3.csv
+ex) python main_multiThreading.py ./input/node5.csv ./input/edge5.csv ./output/final5.csv 10
 
 input file 설명
 1. node관련 csv파일 header 설명

@@ -50,6 +50,14 @@ xList = x.values.tolist()
 yList = y.values.tolist()
 finalRttDataList = finalRttData.values.tolist()
 
+# 그래프를 만들고 node 관련 csv 파일에서 가져온 node 정보로 node 추가
+G = nx.Graph()
+G.add_nodes_from(nodeList)
+# 각 node들에게 x, y Position을 attribute로 부여한다
+for node in nodeList:
+    G.nodes[node]['xPos'] = xPosList[nodeList.index(node)]
+    G.nodes[node]['yPos'] = yPosList[nodeList.index(node)]
+
 # TODO 여기서부터는 시뮬레이션 1번에 대한 것
 # cacheServer의 위치를 랜덤으로 배정하는 부분(위치의 x, y position의 범위는 네트워크 토폴로지의 베이스가 된 사진의 크기와 관련있다.)
 cacheServerNodeNum = 0
@@ -63,13 +71,7 @@ endedPacketSeries = 0
 CONST_PACKETSERIES_LIMIT = 1000
 CONST_FACTOR = 0.000001
 CONST_CACHE_SIZE = 10
-# 그래프를 만들고 node 관련 csv 파일에서 가져온 node 정보로 node 추가
-G = nx.Graph()
-G.add_nodes_from(nodeList)
-# 각 node들에게 x, y Position을 attribute로 부여한다
-for node in nodeList:
-    G.nodes[node]['xPos'] = xPosList[nodeList.index(node)]
-    G.nodes[node]['yPos'] = yPosList[nodeList.index(node)]
+
 # 캐싱 서버의 역할을 할 리스트들의 초기화
 cacheList = []
 for node in nodeList:
@@ -88,7 +90,7 @@ for i in nodeList:
 # client node(server node, cache server node를 제외한 노드)를 담아놓는 리스트
 clientList = []
 for i in nodeList:
-    if nodeTypeList[i - 1] == 0:
+    if nodeTypeList[i] == 0:
         clientList.append(i)
 # 각 node들의 variety(같은 것을 request하는 request가 몇번인지), 총 통신 횟수가 몇번인지 저장하는 리스트들 초기화
 varietyList = []
@@ -100,6 +102,7 @@ for node in nodeList:
     else:
         varietyList.append(0)
         trialNumList.append(0)
+
 # edge들을 node의 x, y position을 바탕으로 weight를 정해준다
 for edgeNum in edgeNumList:
     nodeA = G.nodes[edgeAList[edgeNum]]
@@ -110,7 +113,6 @@ for edgeNum in edgeNumList:
     yPosEdgeB = nodeB['yPos']
     edgeWeight = math.sqrt(math.pow((xPosEdgeA - xPosEdgeB), 2) + math.pow((yPosEdgeA - yPosEdgeB), 2))
     G.add_edge(edgeAList[edgeNum], edgeBList[edgeNum], weight=edgeWeight)
-
 
 # cache server의 값을 update할 필요가 있을 경우 실행하는 함수
 def updateCache(G, dst, realdst, payload, cachelist):
