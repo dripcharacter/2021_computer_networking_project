@@ -103,8 +103,8 @@ for xCoord in xNp:
                 G.nodes[node]['yPos'] = yPosList[nodeList.index(node)]
                 break
         # 네트워크 시뮬레이션과 관련된 하이퍼 파라메터(총 시행할 통신의 횟수, 링크의 weight와 관련된 factor, caching server의 size, req packet의 size)
-        CONST_PACKETSERIES_LIMIT = 1000
-        CONST_FACTOR = 0.00001
+        CONST_PACKETSERIES_LIMIT = 4000
+        CONST_FACTOR = 0.001
         CONST_CACHE_SIZE = 10
         CONST_SAMPLE_FOR_ONE_POSITION = 1
         CONST_REQUEST_PACKET_SIZE = 1
@@ -332,7 +332,8 @@ for xCoord in xNp:
 
                 # 파일 전송 끝난 시간 기록하기
                 fileLastReqTimeKey = str(src) + "node file number" + str(payload) + "last req time"
-                rd.set(fileLastReqTimeKey, str(end))
+                rd.set(fileLastReqTimeKey, str(end + CONST_FACTOR * fileIntervalList[payload]))
+                # nodeThreading에서 초기 req 조건과 이후 req 조건을 조율하기 위해 fileLastReqTime을 실제 전송이 끝나고 fileInterval이 지난 시간으로 저장한다
 
                 # redis에서 rtt를 기록할 nodeRttList 가져오기
                 with lock:
@@ -348,7 +349,6 @@ for xCoord in xNp:
                 # packet 종료 확인용
                 print("packet: ending function to get", payload, "from cache server", dst, "to", src,
                       "and origin server", realdst)
-
 
             def main():  # asyncio는 한번에 하나의 run만 할 수 있기에 한번에 asyncio 리스트 객체에서 run을 시킨다
                 threads = []
@@ -367,7 +367,6 @@ for xCoord in xNp:
                 for thread in currentThreadList:
                     if thread.is_alive():
                         thread.join()
-
 
             def nodeThread(G, src, dst, realdst, groupFileList):
                 global endedPacketSeries
@@ -395,7 +394,9 @@ for xCoord in xNp:
                 for groupFile in groupFileList:  # redis에 node의 각 file의 lastReqTime을 보낸다
                     fileLastReqTimeKey = str(src) + "node file number" + str(groupFile) + "last req time"
                     with lock:
-                        rd.set(fileLastReqTimeKey, str(time.time() + randint(1, 100) * CONST_FACTOR))
+                        rd.set(fileLastReqTimeKey, str(time.time()))
+                        # rd.set(fileLastReqTimeKey, str(time.time() + randint(1, 100) * CONST_FACTOR))
+                        # 원래는 지금 주석처리된 줄이지만 지금은 시작시간 꼬는 부분이 얼마나 영향을 주는지 알아보기 위해 잠시 없도록 처리중
 
                 fileSendingBoolList = []
                 for _ in groupFileList:
@@ -411,9 +412,9 @@ for xCoord in xNp:
                         currentLastReqTime = float(rd.get(fileLastReqTimeKey).decode())
                         jsonfileSendingBoolList = rd.get(fileSendingBoolKey).decode()
                         fileSendingBoolList = json.loads(jsonfileSendingBoolList)
-                        if (time.time() - currentLastReqTime >= fileIntervalList[
-                            groupFile] or time.time() >= currentLastReqTime) and not fileSendingBoolList[
+                        if time.time() >= currentLastReqTime and not fileSendingBoolList[
                             groupFileList.index(groupFile)]:  # file.csv에는 fileName이 index 번호로 되어 있다
+                            # 초기 req 조건과 연속된 req 조건의 조율을 위해 fileLastReqTime을 조정했다
                             # 현재 src 노드에서 groupFile은 전송스케줄에 따라 전송을 시작했다는 것을 반영한다
                             fileSendingBoolList[groupFileList.index(groupFile)] = True
                             jsonfileSendingBoolList = json.dumps(fileSendingBoolList, indent=4)
@@ -430,6 +431,9 @@ for xCoord in xNp:
                                 threads.append(thread)
                             else:
                                 break
+                        elif time.time() < currentLastReqTime and not fileSendingBoolList[groupFileList.index(groupFile)]:
+                            print("must wait for next req time at node", src, "to request groupFile", groupFile, "for",
+                                  currentLastReqTime - time.time(), "seconds.")
                     if not endedPacketSeries < CONST_PACKETSERIES_LIMIT:
                         break
                     time.sleep(1 * CONST_FACTOR)
@@ -457,7 +461,6 @@ for xCoord in xNp:
                 # nodeThread multithreading 종료 확인용
                 print("nodeThread: multithreading ending from cache server", dst, "to", src, "and origin server",
                       realdst)
-
 
             main()
             # redis에 있는 cacheList들을 삭제한다
